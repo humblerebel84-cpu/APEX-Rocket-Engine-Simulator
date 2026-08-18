@@ -1,0 +1,8 @@
+node_modules
+dist
+*.local
+.DS_Store
+
+# personal / session notes — not part of the public project
+memory.md
+

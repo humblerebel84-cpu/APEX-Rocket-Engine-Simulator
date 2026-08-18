@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX — Rocket Engine Simulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Archivo:wght@400;600;700;900&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --paper: #f4f1ea;
+  --ink: #1a1815;
+  --rust: #b5502e;
+  --rust-dark: #8a3a1f;
+  --steel: #4a5a63;
+  --steel-light: #7d8f98;
+  --flame: #e8853d;
+  --flame-hot: #f4b942;
+  --line: #d4cfc0;
+  --panel: #fbfaf6;
+}
+
+body {
+  font-family: 'Archivo', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  min-height: 100vh;
+}
+
+.wrap { max-width: 1300px; margin: 0 auto; padding: 28px 24px 80px; }
+
+.masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 4px solid var(--ink);
+  padding-bottom: 16px;
+  margin-bottom: 28px;
+}
+
+.masthead h1 {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: 3em;
+  letter-spacing: -1px;
+  line-height: 0.9;
+}
+.masthead h1 span { color: var(--rust); }
+
+.masthead .tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8em;
+  text-align: right;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  padding: 22px;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.panel h2 {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 10px;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+}
+.panel h2::before { content: '// '; color: var(--rust); }
+
+.field { margin-bottom: 18px; }
+.field label {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  color: var(--steel);
+}
+.field label .val { color: var(--rust); font-weight: 700; }
+
+select, input[type=range] { width: 100%; }
+
+select {
+  font-family: 'Space Mono', monospace;
+  padding: 10px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  font-size: 0.85em;
+  cursor: pointer;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  height: 6px;
+  background: var(--ink);
+  outline: none;
+  margin-top: 4px;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  background: var(--rust);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+  border-radius: 0;
+}
+input[type=range]::-moz-range-thumb {
+  width: 18px; height: 18px;
+  background: var(--rust);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.propellant-note {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72em;
+  color: var(--steel-light);
+  margin-top: 8px;
+  line-height: 1.5;
+  border-left: 3px solid var(--line);
+  padding-left: 10px;
+}
+
+.readout-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.readout {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 16px 14px;
+  position: relative;
+}
+.readout .label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68em;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--flame-hot);
+  margin-bottom: 8px;
+}
+.readout .value {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 1.5em;
+  line-height: 1;
+}
+.readout .unit { font-size: 0.5em; color: var(--steel-light); margin-left: 4px; }
+
+.viz-area {
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+svg { display: block; width: 100%; height: auto; }
+
+.chart-panel {
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 20px;
+}
+
+.chart-panel h2 {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 10px;
+  margin-bottom: 18px;
+}
+.chart-panel h2::before { content: '// '; color: var(--rust); }
+
+.formula-box {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78em;
+  background: var(--ink);
+  color: var(--flame-hot);
+  padding: 14px 16px;
+  margin-top: 18px;
+  line-height: 1.7;
+}
+.formula-box .comment { color: var(--steel-light); }
+
+.mission-panel {
+  margin-top: 24px;
+}
+
+.delta-v-bar-wrap {
+  margin-top: 10px;
+}
+.delta-v-bar-bg {
+  background: var(--ink);
+  height: 34px;
+  position: relative;
+  border: 2px solid var(--ink);
+}
+.delta-v-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rust), var(--flame-hot));
+  transition: width 0.3s ease;
+}
+.delta-v-marker {
+  position: absolute;
+  top: -22px;
+  transform: translateX(-50%);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65em;
+  color: var(--steel);
+  white-space: nowrap;
+}
+.delta-v-marker::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  width: 1px;
+  height: 34px;
+  background: var(--steel-light);
+}
+
+.mission-verdict {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85em;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 2px dashed var(--ink);
+}
+
+footer {
+  margin-top: 40px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72em;
+  color: var(--steel-light);
+  text-align: center;
+  line-height: 1.8;
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  .readout-row { grid-template-columns: repeat(2, 1fr); }
+  .masthead { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .masthead .tag { text-align: left; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useMemo } = React;
+
+// ============================================================
+// REAL PROPELLANT DATA (from published aerospace references)
+// Combustion temp (K), chamber pressure typical (bar),
+// molar mass of exhaust (kg/mol), ratio of specific heats (k)
+// ============================================================
+const PROPELLANTS = {
+  lox_lh2: {
+    name: 'LOX / LH2 (Liquid Hydrogen)',
+    Tc: 3357,       // combustion chamber temp K
+    M: 0.0140,      // kg/mol exhaust molar mass (low = light exhaust, e.g. water/H2 mix)
+    k: 1.20,        // ratio of specific heats
+    note: 'Highest performance chemical propellant (RS-25 / SSME class). Cryogenic, low density, big tanks.'
+  },
+  lox_rp1: {
+    name: 'LOX / RP-1 (Kerosene)',
+    Tc: 3670,
+    M: 0.0230,
+    k: 1.148,
+    note: 'Dense, storable-ish, high thrust density. Used in Merlin, F-1, Soyuz engines.'
+  },
+  lox_ch4: {
+    name: 'LOX / LCH4 (Methane)',
+    Tc: 3550,
+    M: 0.0207,
+    k: 1.19,
+    note: 'Coking-resistant, reusable-engine friendly. Used in SpaceX Raptor, Blue Origin BE-4.'
+  },
+  n2o4_mmh: {
+    name: 'N2O4 / MMH (Hypergolic)',
+    Tc: 3125,
+    M: 0.0217,
+    k: 1.21,
+    note: 'Storable, hypergolic (ignites on contact) — used for spacecraft maneuvering, no ignition system needed.'
+  },
+  solid_apcp: {
+    name: 'Solid APCP (Composite)',
+    Tc: 3300,
+    M: 0.0290,
+    k: 1.17,
+    note: 'Ammonium perchlorate composite propellant. Simple, storable, used in SRBs and model rockets.'
+  }
+};
+
+const G0 = 9.80665; // standard gravity m/s^2
+const R_UNIVERSAL = 8.314; // J/(mol·K)
+
+// Real de Laval nozzle exhaust velocity equation
+function exhaustVelocity(Tc, M, k, Pc, Pe) {
+  const pressureRatio = Pe / Pc;
+  const term = 1 - Math.pow(pressureRatio, (k - 1) / k);
+  const ve = Math.sqrt(
+    (2 * k / (k - 1)) * (R_UNIVERSAL / M) * Tc * Math.max(term, 0)
+  );
+  return ve; // m/s
+}
+
+function specificImpulse(ve) {
+  return ve / G0; // seconds
+}
+
+// Tsiolkovsky rocket equation
+function deltaV(isp, m0, mf) {
+  return isp * G0 * Math.log(m0 / mf);
+}
+
+function thrust(mdot, ve, Pe, Pa, Ae) {
+  return mdot * ve + (Pe - Pa) * Ae;
+}
+
+function fmt(n, d = 0) {
+  if (!isFinite(n)) return '—';
+  return n.toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d });
+}
+
+function RocketSimulator() {
+  const [propKey, setPropKey] = useState('lox_ch4');
+  const [chamberPressure, setChamberPressure] = useState(100); // bar
+  const [exitPressure, setExitPressure] = useState(0.5); // bar (near-vacuum optimized)
+  const [ambientPressure, setAmbientPressure] = useState(0); // bar, 0 = vacuum, 1.01 = sea level
+  const [mdot, setMdot] = useState(250); // kg/s mass flow
+  const [exitArea, setExitArea] = useState(0.8); // m^2
+  const [dryMass, setDryMass] = useState(4000); // kg
+  const [propMass, setPropMass] = useState(16000); // kg
+
+  const prop = PROPELLANTS[propKey];
+
+  const results = useMemo(() => {
+    const Pc = chamberPressure * 1e5; // Pa
+    const Pe = exitPressure * 1e5;
+    const Pa = ambientPressure * 1e5;
+    const ve = exhaustVelocity(prop.Tc, prop.M, prop.k, Pc, Pe);
+    const isp = specificImpulse(ve);
+    const F = thrust(mdot, ve, Pe, Pa, exitArea);
+    const m0 = dryMass + propMass;
+    const mf = dryMass;
+    const dv = deltaV(isp, m0, mf);
+    const burnTime = propMass / mdot;
+    const twr = F / (m0 * G0); // thrust-to-weight ratio
+    return { ve, isp, F, dv, burnTime, twr, m0, mf };
+  }, [prop, chamberPressure, exitPressure, ambientPressure, mdot, exitArea, dryMass, propMass]);
+
+  // Reference delta-v requirements for context
+  const missionRefs = [
+    { name: 'LEO from surface', dv: 9400 },
+    { name: 'Trans-Lunar Injection', dv: 3200 },
+    { name: 'Lunar landing', dv: 1730 },
+    { name: 'Trans-Mars Injection', dv: 3600 },
+    { name: 'Earth escape (from LEO)', dv: 3200 }
+  ];
+  const maxRef = 12000;
+
+  const flameHeight = Math.min(280, Math.max(40, results.F / 2000));
+  const flameWidth = Math.min(90, Math.max(30, mdot / 4));
+
+  return (
+    <div className="wrap">
+      <div className="masthead">
+        <h1>APEX<span>.</span><br/>ROCKET ENGINE SIM</h1>
+        <div className="tag">
+          REAL PHYSICS ENGINE<br/>
+          de Laval Nozzle Theory · Tsiolkovsky Equation<br/>
+          Build 1.0 — Not fiction. Actual aerospace equations.
+        </div>
+      </div>
+
+      <div className="readout-row">
+        <div className="readout">
+          <div className="label">Exhaust Velocity</div>
+          <div className="value">{fmt(results.ve)}<span className="unit">m/s</span></div>
+        </div>
+        <div className="readout">
+          <div className="label">Specific Impulse</div>
+          <div className="value">{fmt(results.isp)}<span className="unit">sec</span></div>
+        </div>
+        <div className="readout">
+          <div className="label">Thrust</div>
+          <div className="value">{fmt(results.F / 1000, 1)}<span className="unit">kN</span></div>
+        </div>
+        <div className="readout">
+          <div className="label">Thrust/Weight</div>
+          <div className="value">{fmt(results.twr, 2)}<span className="unit">ratio</span></div>
+        </div>
+      </div>
+
+      <div className="grid">
+        <div className="panel">
+          <h2>Propellant & Nozzle</h2>
+
+          <div className="field">
+            <label>Propellant Combination</label>
+            <select value={propKey} onChange={e => setPropKey(e.target.value)}>
+              {Object.entries(PROPELLANTS).map(([k, v]) => (
+                <option key={k} value={k}>{v.name}</option>
+              ))}
+            </select>
+            <div className="propellant-note">{prop.note}</div>
+          </div>
+
+          <div className="field">
+            <label>Chamber Pressure <span className="val">{chamberPressure} bar</span></label>
+            <input type="range" min="10" max="300" value={chamberPressure}
+              onChange={e => setChamberPressure(+e.target.value)} />
+          </div>
+
+          <div className="field">
+            <label>Nozzle Exit Pressure <span className="val">{exitPressure} bar</span></label>
+            <input type="range" min="0.1" max="5" step="0.1" value={exitPressure}
+              onChange={e => setExitPressure(+e.target.value)} />
+          </div>
+
+          <div className="field">
+            <label>Ambient Pressure <span className="val">{ambientPressure === 0 ? 'Vacuum' : ambientPressure + ' bar'}</span></label>
+            <input type="range" min="0" max="1.01" step="0.01" value={ambientPressure}
+              onChange={e => setAmbientPressure(+e.target.value)} />
+          </div>
+
+          <div className="field">
+            <label>Mass Flow Rate <span className="val">{mdot} kg/s</span></label>
+            <input type="range" min="10" max="700" value={mdot}
+              onChange={e => setMdot(+e.target.value)} />
+          </div>
+
+          <div className="field">
+            <label>Nozzle Exit Area <span className="val">{exitArea.toFixed(2)} m²</span></label>
+            <input type="range" min="0.1" max="3" step="0.05" value={exitArea}
+              onChange={e => setExitArea(+e.target.value)} />
+          </div>
+
+          <h2 style={{marginTop: 24}}>Vehicle Mass</h2>
+
+          <div className="field">
+            <label>Dry Mass <span className="val">{fmt(dryMass)} kg</span></label>
+            <input type="range" min="500" max="20000" step="100" value={dryMass}
+              onChange={e => setDryMass(+e.target.value)} />
+          </div>
+
+          <div className="field">
+            <label>Propellant Mass <span className="val">{fmt(propMass)} kg</span></label>
+            <input type="range" min="1000" max="100000" step="500" value={propMass}
+              onChange={e => setPropMass(+e.target.value)} />
+          </div>
+
+          <div className="formula-box">
+            <span className="comment">// de Laval exhaust velocity</span><br/>
+            v_e = √[(2k/(k-1))·(R/M)·Tc·(1-(Pe/Pc)^((k-1)/k))]<br/><br/>
+            <span className="comment">// Tsiolkovsky rocket equation</span><br/>
+            Δv = Isp · g₀ · ln(m₀/mf)
+          </div>
+        </div>
+
+        <div>
+          <div className="viz-area">
+            <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg">
+              {/* Rocket body */}
+              <rect x="260" y="20" width="80" height="180" fill="#fbfaf6" stroke="#1a1815" strokeWidth="3"/>
+              <polygon points="260,20 300,-10 340,20" fill="#4a5a63" stroke="#1a1815" strokeWidth="3"/>
+              <rect x="260" y="20" width="80" height="180" fill="none" stroke="#1a1815" strokeWidth="3"/>
+              <line x1="260" y1="80" x2="340" y2="80" stroke="#1a1815" strokeWidth="1.5" strokeDasharray="4,3"/>
+              <line x1="260" y1="140" x2="340" y2="140" stroke="#1a1815" strokeWidth="1.5" strokeDasharray="4,3"/>
+              {/* Fins */}
+              <polygon points="260,160 230,200 260,200" fill="#b5502e" stroke="#1a1815" strokeWidth="2"/>
+              <polygon points="340,160 370,200 340,200" fill="#b5502e" stroke="#1a1815" strokeWidth="2"/>
+              {/* Nozzle */}
+              <polygon points="270,200 330,200 315,225 285,225" fill="#4a5a63" stroke="#1a1815" strokeWidth="3"/>
+              {/* Flame - dynamic based on thrust */}
+              <polygon
+                points={`285,225 315,225 ${300+flameWidth/2},${225+flameHeight} ${300-flameWidth/2},${225+flameHeight}`}
+                fill="url(#flameGrad)" opacity="0.9"
+              >
+              </polygon>
+              <polygon
+                points={`290,225 310,225 ${300+flameWidth/4},${225+flameHeight*0.6} ${300-flameWidth/4},${225+flameHeight*0.6}`}
+                fill="#f4b942" opacity="0.9"
+              />
+              <defs>
+                <linearGradient id="flameGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f4b942"/>
+                  <stop offset="50%" stopColor="#e8853d"/>
+                  <stop offset="100%" stopColor="#b5502e" stopOpacity="0.3"/>
+                </linearGradient>
+              </defs>
+
+              {/* Data labels */}
+              <text x="30" y="40" fontFamily="Space Mono, monospace" fontSize="12" fill="#1a1815" fontWeight="700">PROPELLANT</text>
+              <text x="30" y="58" fontFamily="Space Mono, monospace" fontSize="11" fill="#b5502e">{prop.name}</text>
+
+              <text x="30" y="100" fontFamily="Space Mono, monospace" fontSize="12" fill="#1a1815" fontWeight="700">BURN TIME</text>
+              <text x="30" y="118" fontFamily="Space Mono, monospace" fontSize="18" fill="#b5502e" fontWeight="700">{fmt(results.burnTime,1)}s</text>
+
+              <text x="450" y="100" fontFamily="Space Mono, monospace" fontSize="12" fill="#1a1815" fontWeight="700" textAnchor="end">MASS RATIO</text>
+              <text x="450" y="118" fontFamily="Space Mono, monospace" fontSize="18" fill="#b5502e" fontWeight="700" textAnchor="end">{fmt(results.m0/results.mf,2)}</text>
+
+              <text x="30" y="290" fontFamily="Space Mono, monospace" fontSize="12" fill="#1a1815" fontWeight="700">DELTA-V CAPACITY</text>
+              <text x="30" y="315" fontFamily="Space Mono, monospace" fontSize="24" fill="#1a1815" fontWeight="700">{fmt(results.dv)} <tspan fontSize="14" fill="#7d8f98">m/s</tspan></text>
+
+              <text x="450" y="290" fontFamily="Space Mono, monospace" fontSize="12" fill="#1a1815" fontWeight="700" textAnchor="end">TWR</text>
+              <text x="450" y="315" fontFamily="Space Mono, monospace" fontSize="24" fill={results.twr > 1 ? "#1a1815" : "#b5502e"} fontWeight="700" textAnchor="end">
+                {fmt(results.twr,2)} {results.twr <= 1 && '⚠'}
+              </text>
+            </svg>
+          </div>
+
+          <div className="chart-panel mission-panel">
+            <h2>Mission Δv Requirements — Can This Engine Do It?</h2>
+            <div className="delta-v-bar-wrap">
+              <div className="delta-v-bar-bg">
+                <div className="delta-v-bar-fill" style={{width: `${Math.min(100, results.dv/maxRef*100)}%`}}></div>
+              </div>
+              <div style={{position:'relative', height: 30}}>
+                {missionRefs.map(m => (
+                  <div key={m.name} className="delta-v-marker" style={{left: `${Math.min(100,m.dv/maxRef*100)}%`}}>
+                    {m.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mission-verdict">
+              {results.dv > 9400
+                ? `✓ This stage alone could theoretically reach LEO from the surface (${fmt(results.dv)} m/s available vs 9,400 m/s needed) — though real vehicles need multiple stages due to structural/aero losses.`
+                : results.dv > 3200
+                ? `This stage has enough Δv for a Trans-Lunar Injection burn or Mars transfer burn (${fmt(results.dv)} m/s available), but not enough alone to reach orbit from the surface.`
+                : results.dv > 1000
+                ? `This is upper-stage / in-space maneuvering territory (${fmt(results.dv)} m/s) — enough for orbit adjustments, not surface-to-orbit.`
+                : `Low Δv (${fmt(results.dv)} m/s) — this configuration is more like a reaction control thruster than a launch stage. Try increasing propellant mass or Isp.`}
+              {results.twr <= 1 && ` ⚠ Warning: Thrust-to-weight ratio is below 1.0 — this engine cannot lift its own vehicle off the ground (fine for vacuum/orbital stages, not for launch).`}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        Physics: de Laval nozzle exhaust velocity equation · Tsiolkovsky rocket equation · Real propellant combustion data<br/>
+        This is a simplified model (no boundary layer losses, no altitude-varying ambient pressure during flight, no multi-stage optimization) — but every equation is real aerospace engineering.
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.render(<RocketSimulator />, document.getElementById('root'));
+</script>
+</body>
+</html>
