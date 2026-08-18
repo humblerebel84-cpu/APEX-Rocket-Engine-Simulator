@@ -1,0 +1,41 @@
+Engine Sizing Tool v2.0 + Propellant DB Phase 2 (15 -> 18)
+
+Phase 4 (engine sizing v2.0):
+- Sea-level/vacuum ambient modes and optional loss layer (conical divergence
+  + boundary layer); ideal model and EquationPanel stay uncorrected
+- Thrust-target mode: closed-form At = F/(Pc*Cf) via thrustCoefficient()
+- Design-space sweeps (Isp vs eps, thrust vs Pc) as hand-rolled SVG
+- Shareable "#apex:" hash config links with validation
+- Printable engine spec sheet
+
+Propellant DB Phase 2 (three liquid bipropellants, all CEA-validated):
+- lf2_lh2   Tc 4150 K, M 0.0108, k 1.33, O/F 9.0 -> 488 s @ 68 bar, eps 77
+- irfna_udmh Tc 3130 K, M 0.0210, k 1.23, O/F 3.3 -> 322 s @ 70 bar, eps 40
+- h2o2_rp1  Tc 2960 K, M 0.0199, k 1.21, O/F 7.0 -> 327 s @ 70 bar, eps 40
+
+Constants were calibrated against NASA CEA run locally (rocketcea 1.2.3),
+not taken from recalled tables. Each model Isp lands within 0.2% of its CEA
+equilibrium reference; model c* sits +3.1/+4.3/+4.8% vs CEA c*, in family
+with the existing entries (-1.1% to +6.2%).
+
+Each fills a structural gap: no storable *bipropellant* existed, no
+nitric-acid oxidizer existed, and LOX/LH2 was silently teaching a false
+performance ceiling. The +-3% CEA discipline now rests on 11 independent
+reference points instead of 8.
+
+Decouple approxModel from category. The old integrity test asserted
+approxModel === !(Cryogenic || Hypergolic) — a proxy that breaks as soon as
+a storable liquid biprop exists. Replaced with the real invariant: the set
+of non-approx propellants must equal the CEA_VALIDATED list that lives
+beside the regression cases, plus Solid/Hybrid/Monoprop are always approx.
+Adding a non-approx propellant without a regression case now fails the build.
+
+Also adds three ShowcaseCompare trade studies (The Chemical Ceiling,
+Oxidizer Swap, Green vs Toxic Storables) and two like-for-like swap tests
+pinning the teaching deltas (+35 s fluorine, -15 s nitric acid).
+
+125 tests, lint, typecheck and build green.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01KsdsoL6vQNpmzKS5y4FNLy
+

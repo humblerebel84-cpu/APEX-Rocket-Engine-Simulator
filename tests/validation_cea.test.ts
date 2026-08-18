@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { cStar } from '../src/physics/nozzle';
 import { computeDesign } from '../src/physics/performance';
-import { PROPELLANTS, PROPELLANT_IDS, type Propellant } from '../src/physics/propellants';
+import { PROPELLANTS, PROPELLANT_IDS, type Propellant, type PropellantId } from '../src/physics/propellants';
+
+// Every propellant held to the liquid-bipropellant discipline — each one has a
+// regression case in this file (a ±3% CEA point, or a narrow published band).
+// This list is the enforcement mechanism: adding a propellant with
+// `approxModel` unset but no regression case here fails the integrity test below.
+const CEA_VALIDATED: PropellantId[] = [
+  'lox_lh2',
+  'lox_rp1',
+  'lox_ch4',
+  'lox_ethanol',
+  'lox_ammonia',
+  'lox_propane',
+  'lf2_lh2',
+  'n2o4_mmh',
+  'n2o4_udmh',
+  'aerozine_n2o4',
+  'irfna_udmh',
+  'h2o2_rp1',
+];
 
 // Regression vs published NASA CEA / Sutton reference values (Architecture.md §6).
 // Tolerance: ±3% (frozen Tc/M/k model vs full equilibrium chemistry) — applied to
@@ -63,10 +82,41 @@ describe('Isp validation vs CEA/Sutton reference points (liquid bipropellants, �
     expect(Math.abs(isp - 335) / 335).toBeLessThan(0.03);
   });
 
+  it('IRFNA/UDMH @ 70 bar, ε=40 → ~322 s (±3%)', () => {
+    const isp = ispVac('irfna_udmh', 70, 40);
+    expect(Math.abs(isp - 322) / 322).toBeLessThan(0.03);
+  });
+
+  it('98% H2O2/RP-1 @ 70 bar, ε=40 → ~327 s (±3%)', () => {
+    const isp = ispVac('h2o2_rp1', 70, 40);
+    expect(Math.abs(isp - 327) / 327).toBeLessThan(0.03);
+  });
+
+  it('LF2/LH2 @ 68 bar, ε=77 → ~488 s (±3%)', () => {
+    const isp = ispVac('lf2_lh2', 68, 77);
+    expect(Math.abs(isp - 488) / 488).toBeLessThan(0.03);
+  });
+
   it('N2O4/MMH @ 10 bar, ε=40 falls in the published hypergolic band (295–325 s)', () => {
     const isp = ispVac('n2o4_mmh', 10, 40);
     expect(isp).toBeGreaterThan(295);
     expect(isp).toBeLessThan(325);
+  });
+});
+
+// The two headline teaching comparisons the new entries exist to support. Both are
+// evaluated at identical Pc/ε so the delta is purely a propellant-chemistry effect.
+describe('like-for-like propellant swaps (identical Pc and ε)', () => {
+  it('LF2/LH2 beats LOX/LH2 by ≈ 35 s at 68 bar, ε=77 — the chemical ceiling', () => {
+    const gain = ispVac('lf2_lh2', 68, 77) - ispVac('lox_lh2', 68, 77);
+    expect(gain).toBeGreaterThan(25);
+    expect(gain).toBeLessThan(45);
+  });
+
+  it('swapping N2O4 for IRFNA on UDMH costs ≈ 15 s at 70 bar, ε=40', () => {
+    const loss = ispVac('n2o4_udmh', 70, 40) - ispVac('irfna_udmh', 70, 40);
+    expect(loss).toBeGreaterThan(8);
+    expect(loss).toBeLessThan(24);
   });
 });
 
@@ -118,6 +168,9 @@ describe('cStar model consistency', () => {
     ['lox_ethanol', 1715],
     ['lox_ammonia', 1761],
     ['lox_propane', 1849],
+    ['lf2_lh2', 2657],
+    ['h2o2_rp1', 1710],
+    ['irfna_udmh', 1701],
     ['n2o4_mmh', 1682],
     ['n2o4_udmh', 1756],
     ['aerozine_n2o4', 1729],
@@ -133,8 +186,8 @@ describe('cStar model consistency', () => {
 });
 
 describe('propellant database integrity', () => {
-  it('has ≥15 propellants, each with Tc/M/k/citation and a valid category', () => {
-    expect(PROPELLANT_IDS.length).toBeGreaterThanOrEqual(15);
+  it('has ≥18 propellants, each with Tc/M/k/citation and a valid category', () => {
+    expect(PROPELLANT_IDS.length).toBeGreaterThanOrEqual(18);
     const validCategories = ['Cryogenic', 'Storable', 'Hypergolic', 'Solid', 'Hybrid', 'Monoprop'];
     for (const id of PROPELLANT_IDS) {
       const p = PROPELLANTS[id];
@@ -157,11 +210,23 @@ describe('propellant database integrity', () => {
     }
   });
 
-  it('approxModel is true only outside Cryogenic/Hypergolic (CEA ±3% discipline is liquid-biprop only)', () => {
+  // The discipline is a property of the combustion model, not of the category:
+  // 98% H2O2 / RP-1 is a CEA-validated liquid bipropellant that is neither
+  // cryogenic nor hypergolic, so the old category-derived rule no longer holds.
+  it('approxModel is unset exactly for the propellants with a regression case in this file', () => {
+    const validated = PROPELLANT_IDS.filter((id) => {
+      const p: Propellant = PROPELLANTS[id];
+      return !(p.approxModel ?? false);
+    });
+    expect([...validated].sort()).toEqual([...CEA_VALIDATED].sort());
+  });
+
+  it('Solid / Hybrid / Monoprop entries are always approxModel (frozen flow is a simplification there)', () => {
     for (const id of PROPELLANT_IDS) {
       const p: Propellant = PROPELLANTS[id];
-      const isLiquidBiprop = p.category === 'Cryogenic' || p.category === 'Hypergolic';
-      expect(p.approxModel ?? false).toBe(!isLiquidBiprop);
+      if (p.category === 'Solid' || p.category === 'Hybrid' || p.category === 'Monoprop') {
+        expect(p.approxModel).toBe(true);
+      }
     }
   });
 

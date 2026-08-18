@@ -12,8 +12,12 @@ export interface Propellant {
   densityKgM3: number; // bulk (combination) density, kg/m³ — O/F-weighted; drives density-impulse readout
   flame: string; // exhaust plume colour (presentation only; e.g. RP-1 bright orange, LH2 pale)
   cokingLimitBar?: number; // chamber-pressure coking limit (kerosene ~200 bar) → warning above it
-  // true = simplified frozen-flow approximation (monopropellants / solids).
-  // The ±3% CEA validation discipline applies to liquid bipropellants only.
+  // true = simplified frozen-flow approximation (monopropellants / solids / hybrids),
+  // where the frozen (Tc, M, k) model is a genuine simplification of the real physics.
+  // false/absent = held to the ±3% CEA regression discipline in validation_cea.test.ts.
+  // NOTE: this is a property of the *combustion model*, not of the category — a storable
+  // liquid bipropellant (98% H2O2 / RP-1) is CEA-validated despite not being cryogenic
+  // or hypergolic, so do not re-derive this flag from `category`.
   approxModel?: boolean;
   note: string;
   citation: string;
@@ -94,6 +98,18 @@ export const PROPELLANTS = {
     note: 'Propane sits between methane and kerosene — near-LNG performance with simpler logistics. Trialled by small-launch startups; student-friendly.',
     citation: 'NASA CEA, Pc = 100 bar, O/F = 3.9, ε = 40 → Isp,vac ≈ 359 s; ρ_bulk ≈ 904 kg/m³ (LPG ≈ 500, LOX 1141)',
   },
+  lf2_lh2: {
+    name: 'LF2 / LH2 (Liquid Fluorine)',
+    category: 'Cryogenic',
+    Tc: 4150,
+    M: 0.0108,
+    k: 1.33,
+    of: 9.0,
+    densityKgM3: 498,
+    flame: '#e2d4f5',
+    note: 'The chemical ceiling — and the reason Isp is never the whole story. Fluorine beats LOX on BOTH specific impulse and tank density, and has still never flown. It ignites on contact with almost anything (including asbestos and sand), the exhaust is hydrofluoric acid, and a pad spill is a mass-casualty event. Compare it against LOX/LH2 to see exactly how much performance engineers walked away from.',
+    citation: 'NASA CEA (rocketcea 1.2.3, F2/LH2), Pc = 68 bar, O/F = 9.0, ε = 77 → Isp,vac ≈ 488 s (equilibrium), Tc ≈ 4146 K, c* ≈ 2540 m/s — same Pc and ε as the LOX/LH2 entry, i.e. ≈ +35 s for a like-for-like swap; ρ_bulk ≈ 498 kg/m³ (LH2 71, LF2 1505)',
+  },
 
   // ── Hypergolic ────────────────────────────────────────────────────────────
   n2o4_mmh: {
@@ -132,8 +148,32 @@ export const PROPELLANTS = {
     note: 'Aerozine-50 (50% UDMH / 50% hydrazine) + N2O4 powered the Apollo SPS AJ10 engine — every lunar mission’s insertion, midcourse and return burns.',
     citation: 'NASA CEA, Pc ≈ 10 bar, O/F = 1.6, ε = 60 → Isp,vac ≈ 335 s; AJ10-137 flew at ε = 147.5, achieving ≈ 312 s incl. losses; ρ_bulk ≈ 1172 kg/m³ (Aerozine-50 ≈ 900, N2O4 1446)',
   },
+  irfna_udmh: {
+    name: 'IRFNA / UDMH (Nitric Acid)',
+    category: 'Hypergolic',
+    Tc: 3130,
+    M: 0.021,
+    k: 1.23,
+    of: 3.3,
+    densityKgM3: 1282,
+    flame: '#c98f5c',
+    note: 'Inhibited red fuming nitric acid — by vehicle count, the most-flown storable oxidizer on Earth (Scud/R-17, Prithvi, and most Cold-War tactical missiles). Cheaper, denser and easier to store than N2O4; the price is roughly 15 s of Isp. The “inhibited” part is the HF additive that stops it dissolving its own tank.',
+    citation: 'NASA CEA (rocketcea 1.2.3, IRFNA/UDMH), Pc = 70 bar, O/F = 3.3, ε = 40 → Isp,vac ≈ 322 s (equilibrium), Tc ≈ 3132 K, c* ≈ 1633 m/s — vs N2O4/UDMH ≈ 337 s at identical Pc and ε; ρ_bulk ≈ 1282 kg/m³ (UDMH 791, IRFNA ≈ 1580)',
+  },
 
   // ── Storable ──────────────────────────────────────────────────────────────
+  h2o2_rp1: {
+    name: '98% H2O2 / RP-1 (Storable Biprop)',
+    category: 'Storable',
+    Tc: 2960,
+    M: 0.0199,
+    k: 1.21,
+    of: 7.0,
+    densityKgM3: 1316,
+    flame: '#edc98a',
+    note: 'The storable bipropellant that is neither hypergolic nor toxic. Black Arrow’s Gamma engines pushed HTP through a silver catalyst pack, then burned the resulting oxygen-rich steam with kerosene. Denser in the tank than LOX/RP-1, sits on the pad for months, and the exhaust is steam and CO2 — the “green” answer to N2O4.',
+    citation: 'NASA CEA (rocketcea 1.2.3, Peroxide98/RP1), Pc = 70 bar, O/F = 7.0, ε = 40 → Isp,vac ≈ 327 s (equilibrium), Tc ≈ 2956 K, c* ≈ 1660 m/s; Black Arrow Gamma 8 (HTP/kerosene) flight reference; ρ_bulk ≈ 1316 kg/m³ (RP-1 810, 98% H2O2 1445)',
+  },
   htp_98: {
     name: '98% H2O2 — HTP (Monoprop / Oxidizer)',
     category: 'Storable',

@@ -29,6 +29,27 @@ const SHOWCASES: Showcase[] = [
     compare: 'solid_apcp',
     blurb: 'Hybrid = solid paraffin grain + liquid N2O (throttlable, restartable, safer). Solid APCP = monolithic cast grain (simple, dense, but no throttle or shutdown).',
   },
+  {
+    id: 'the-chemical-ceiling',
+    label: 'The Chemical Ceiling',
+    primary: 'lf2_lh2',
+    compare: 'lox_lh2',
+    blurb: 'Fluorine beats oxygen on Isp AND on tank density — and never flew. Isp is a number you can optimize; hydrofluoric-acid exhaust is a number you cannot. The clearest case that propellant choice is never just performance.',
+  },
+  {
+    id: 'oxidizer-swap',
+    label: 'Oxidizer Swap: N2O4 vs IRFNA',
+    primary: 'n2o4_udmh',
+    compare: 'irfna_udmh',
+    blurb: 'Same fuel, same engine, different oxidizer. N2O4 buys you ~15 s of Isp; nitric acid buys you cost, density and a far easier supply chain. Which is why most tactical missiles ever built flew on the slower one.',
+  },
+  {
+    id: 'green-vs-toxic',
+    label: 'Green vs Toxic Storables',
+    primary: 'h2o2_rp1',
+    compare: 'n2o4_mmh',
+    blurb: 'Both sit on the pad for months. One exhausts steam and CO2, the other needs SCAPE suits and a toxic-vapour exclusion zone. The Isp gap is the price of going green.',
+  },
 ];
 
 export default function ShowcaseCompare({ onLoad }: Props) {

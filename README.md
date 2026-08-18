@@ -77,7 +77,7 @@ Then open the URL it prints (usually `http://localhost:5173`).
 
 ## Features
 
-- 🧯 **15 real-world propellants** across 6 categories (see [database](#the-propellant-database))
+- 🧯 **18 real-world propellants** across 6 categories (see [database](#the-propellant-database))
 - 📊 **Trade-study comparison** — put two propellants in the same engine, see what changes and why
 - ⚙️ **Real-engine presets** — load RS-25, Raptor, Merlin 1D, RD-107A, RL10C-1 with one click
 - 🎯 **Mission presets** — Falcon 9 booster stage, upper stage, CubeSat kicker
@@ -136,9 +136,9 @@ The disclaimer in the footer is there for a reason: **this is not a flight-certi
 
 | Category | Propellants |
 |---|---|
-| **Cryogenic** | LOX/LH2 (RS-25), LOX/RP-1 (Merlin/F-1), LOX/LCH4 (Raptor/BE-4), LOX/Ethanol (V-2), LOX/Ammonia (X-15 XLR99), LOX/Propane |
-| **Hypergolic** | N2O4/MMH, N2O4/UDMH (Titan II/Proton), Aerozine-50/N2O4 (Apollo SPS AJ10) |
-| **Storable** | 98% H2O2 — HTP (Black Arrow) |
+| **Cryogenic** | LOX/LH2 (RS-25), LOX/RP-1 (Merlin/F-1), LOX/LCH4 (Raptor/BE-4), LOX/Ethanol (V-2), LOX/Ammonia (X-15 XLR99), LOX/Propane, **LF2/LH2 (the chemical ceiling)** |
+| **Hypergolic** | N2O4/MMH, N2O4/UDMH (Titan II/Proton), Aerozine-50/N2O4 (Apollo SPS AJ10), **IRFNA/UDMH (Scud/tactical)** |
+| **Storable** | 98% H2O2 — HTP (Black Arrow), **98% H2O2/RP-1 (Black Arrow Gamma)** |
 | **Solid** | APCP (SRBs/hobby), KNSU sugar propellant (amateur rocketry) |
 | **Hybrid** | N2O/Paraffin (student/cubeSat-class) |
 | **Monoprop** | Hydrazine (satellite thrusters), ASCENT green monoprop (NASA GR-1) |
@@ -148,8 +148,10 @@ Each entry carries:
 - O/F ratio, bulk density, plume color
 - **Citation** (Sutton & Biblarz 9th ed., Huzel & Huang, NASA CEA, or published flight data)
 
-Monopropellants and solids are marked `approxModel` — the ±3% CEA-validation discipline
-applies to liquid bipropellants only.
+Monopropellants, solids and hybrids are marked `approxModel` — the ±3% CEA-validation
+discipline applies to liquid bipropellants only. Note this is a property of the
+*combustion model*, not of the category: 98% H2O2 / RP-1 is a CEA-validated liquid
+bipropellant that is neither cryogenic nor hypergolic.
 
 ---
 
@@ -215,7 +217,7 @@ npm run dev          # → http://localhost:5173
 # 4. Verify everything
 npm run typecheck    # TypeScript
 npm run lint         # ESLint
-npm run test         # Vitest (116 tests incl. CEA regression)
+npm run test         # Vitest (125 tests incl. CEA regression)
 
 # 5. Production build
 npm run build        # outputs to dist/
@@ -306,11 +308,11 @@ rocket_simulator/
 
 ## Validation & Testing
 
-**116 unit tests**, all passing, organized as:
+**125 unit tests**, all passing, organized as:
 
 | Suite | Tests | Purpose |
 |---|---|---|
-| `validation_cea.test.ts` | 34 | Regression vs NASA CEA / Sutton reference values |
+| `validation_cea.test.ts` | 43 | Regression vs NASA CEA / Sutton reference values |
 | `performance.test.ts` | 16 | Thrust, Isp, Δv, TWR, edge cases |
 | `nozzle.test.ts` | 19 | Mach–area-ratio, c*, pressure-ratio solvers |
 | `presets.test.ts` | 10 | Preset integrity + model-vs-published Isp |
@@ -326,6 +328,9 @@ rocket_simulator/
 - LOX/LH2 @ 68 bar, ε=77 → 453 s
 - LOX/RP-1 @ 97 bar, ε=16 → 333 s
 - LOX/LCH4 @ 100 bar, ε=40 → 376 s
+- LF2/LH2 @ 68 bar, ε=77 → 488 s
+- IRFNA/UDMH @ 70 bar, ε=40 → 322 s
+- 98% H2O2/RP-1 @ 70 bar, ε=40 → 327 s
 
 Monopropellants and solids use wider published bands because the frozen-flow model is a simplification there.
 
