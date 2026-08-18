@@ -30,8 +30,10 @@
 - [x] Deploy to GitHub Pages; custom URL path.
       Live at https://humblerebel84-cpu.github.io/APEX-Rocket-Engine-Simulator/
       (`base: './'` + Actions workflow `configure-pages` → `deploy-pages`).
-- [ ] About page: physics sources, validation table, disclaimer, feedback link
-      (form or GitHub issues).
+- [x] About page: physics sources, validation table, disclaimer, feedback link
+      (`AboutPanel.tsx` — validation table rendered from the same shared data
+      (`physics/validation.ts`) the regression tests enforce; live-computed model
+      Isp per row, sources for every equation, GitHub Issues feedback link).
 - [ ] Share: r/rocketry, r/spacex, Rocketry Forum, university team channels.
 - **Exit criteria:** live URL, ≥500 visitors in 2 weeks, feedback log started.
 

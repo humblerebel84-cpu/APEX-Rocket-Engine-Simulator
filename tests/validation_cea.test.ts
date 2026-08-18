@@ -1,26 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { cStar } from '../src/physics/nozzle';
 import { computeDesign } from '../src/physics/performance';
-import { PROPELLANTS, PROPELLANT_IDS, type Propellant, type PropellantId } from '../src/physics/propellants';
+import { PROPELLANTS, PROPELLANT_IDS, type Propellant } from '../src/physics/propellants';
+import { CEA_REFERENCE_POINTS, CEA_VALIDATED } from '../src/physics/validation';
 
-// Every propellant held to the liquid-bipropellant discipline — each one has a
-// regression case in this file (a ±3% CEA point, or a narrow published band).
-// This list is the enforcement mechanism: adding a propellant with
-// `approxModel` unset but no regression case here fails the integrity test below.
-const CEA_VALIDATED: PropellantId[] = [
-  'lox_lh2',
-  'lox_rp1',
-  'lox_ch4',
-  'lox_ethanol',
-  'lox_ammonia',
-  'lox_propane',
-  'lf2_lh2',
-  'n2o4_mmh',
-  'n2o4_udmh',
-  'aerozine_n2o4',
-  'irfna_udmh',
-  'h2o2_rp1',
-];
+// Reference data (CEA_REFERENCE_POINTS) is the single source shared with the About
+// panel's validation table — the published numbers and the regression cannot drift.
 
 // Regression vs published NASA CEA / Sutton reference values (Architecture.md §6).
 // Tolerance: ±3% (frozen Tc/M/k model vs full equilibrium chemistry) — applied to
@@ -42,60 +27,13 @@ function ispVac(propellantId: keyof typeof PROPELLANTS, PcBar: number, eps: numb
 }
 
 describe('Isp validation vs CEA/Sutton reference points (liquid bipropellants, ±3%)', () => {
-  it('LOX/LH2 @ 68 bar, ε=77 → ~453 s (±3%)', () => {
-    const isp = ispVac('lox_lh2', 68, 77);
-    expect(Math.abs(isp - 453) / 453).toBeLessThan(0.03);
-  });
-
-  it('LOX/RP-1 @ 97 bar, ε=16 → ~333 s (±3%)', () => {
-    const isp = ispVac('lox_rp1', 97, 16);
-    expect(Math.abs(isp - 333) / 333).toBeLessThan(0.03);
-  });
-
-  it('LOX/CH4 @ 100 bar, ε=40 → ~376 s (±3%)', () => {
-    const isp = ispVac('lox_ch4', 100, 40);
-    expect(Math.abs(isp - 376) / 376).toBeLessThan(0.03);
-  });
-
-  it('LOX/Ethanol @ 50 bar, ε=40 → ~331 s (±3%)', () => {
-    const isp = ispVac('lox_ethanol', 50, 40);
-    expect(Math.abs(isp - 331) / 331).toBeLessThan(0.03);
-  });
-
-  it('LOX/Ammonia @ 70 bar, ε=40 → ~335 s (±3%)', () => {
-    const isp = ispVac('lox_ammonia', 70, 40);
-    expect(Math.abs(isp - 335) / 335).toBeLessThan(0.03);
-  });
-
-  it('LOX/Propane @ 100 bar, ε=40 → ~359 s (±3%)', () => {
-    const isp = ispVac('lox_propane', 100, 40);
-    expect(Math.abs(isp - 359) / 359).toBeLessThan(0.03);
-  });
-
-  it('N2O4/UDMH @ 70 bar, ε=40 → ~337 s (±3%)', () => {
-    const isp = ispVac('n2o4_udmh', 70, 40);
-    expect(Math.abs(isp - 337) / 337).toBeLessThan(0.03);
-  });
-
-  it('Aerozine-50/N2O4 @ 10 bar, ε=60 → ~335 s (±3%)', () => {
-    const isp = ispVac('aerozine_n2o4', 10, 60);
-    expect(Math.abs(isp - 335) / 335).toBeLessThan(0.03);
-  });
-
-  it('IRFNA/UDMH @ 70 bar, ε=40 → ~322 s (±3%)', () => {
-    const isp = ispVac('irfna_udmh', 70, 40);
-    expect(Math.abs(isp - 322) / 322).toBeLessThan(0.03);
-  });
-
-  it('98% H2O2/RP-1 @ 70 bar, ε=40 → ~327 s (±3%)', () => {
-    const isp = ispVac('h2o2_rp1', 70, 40);
-    expect(Math.abs(isp - 327) / 327).toBeLessThan(0.03);
-  });
-
-  it('LF2/LH2 @ 68 bar, ε=77 → ~488 s (±3%)', () => {
-    const isp = ispVac('lf2_lh2', 68, 77);
-    expect(Math.abs(isp - 488) / 488).toBeLessThan(0.03);
-  });
+  it.each(CEA_REFERENCE_POINTS)(
+    '%s @ %i bar, ε=%i → %i s (±3%)',
+    ({ id, PcBar, eps, refIsp }) => {
+      const isp = ispVac(id, PcBar, eps);
+      expect(Math.abs(isp - refIsp) / refIsp).toBeLessThan(0.03);
+    },
+  );
 
   it('N2O4/MMH @ 10 bar, ε=40 falls in the published hypergolic band (295–325 s)', () => {
     const isp = ispVac('n2o4_mmh', 10, 40);

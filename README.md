@@ -88,6 +88,7 @@ Then open the URL it prints (usually `http://localhost:5173`).
 - 📈 **Sweep plots** — Isp vs expansion ratio and thrust vs chamber pressure, hand-rendered SVG
 - 🔗 **Shareable design links** — one click copies a URL that restores the exact design
 - 🖨️ **Printable spec sheet** — clean two-table datasheet from the Print button
+- 📖 **About / Sources page** — live validation table (model vs NASA CEA, rendered from the same data the tests enforce), equation citations, feedback link
 - 🔬 **Live equation panel** — see the exact formulas with your current numbers substituted in
 - ⚠️ **Smart warnings** — TWR < 1, flow separation, over-expansion, kerosene coking
 - 🌈 **Physically-accurate plume colors** — RP-1 burns orange, LH2 is pale, hypergolics run green
@@ -281,9 +282,10 @@ rocket_simulator/
 │   │   ├── ComparisonPanel.tsx   Side-by-side trade study
 │   │   ├── ShowcaseCompare.tsx   Curated comparison starters
 │   │   ├── SweepChart.tsx        Hand-rolled SVG design-space plots
-│   │   └── SpecSheet.tsx         Print-only engine spec sheet
+│   │   ├── SpecSheet.tsx         Print-only engine spec sheet
+│   │   └── AboutPanel.tsx        Validation table, sources, feedback (modal)
 │   └── styles/theme.css     "Engineering paper" design language
-├── tests/                  ← 116 Vitest tests
+├── tests/                  ← 125 Vitest tests
 ├── PRD.md                  Product requirements
 ├── Architecture.md         Physics + validation methodology
 ├── Design.md               Visual design spec

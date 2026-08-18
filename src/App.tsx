@@ -16,6 +16,7 @@ import ComparisonPanel from './components/ComparisonPanel';
 import ShowcaseCompare from './components/ShowcaseCompare';
 import SweepChart from './components/SweepChart';
 import SpecSheet from './components/SpecSheet';
+import AboutPanel from './components/AboutPanel';
 
 export default function App() {
   const [input, setInput] = useState<EngineDesignInput>(DEFAULT_INPUT);
@@ -23,6 +24,7 @@ export default function App() {
   const [units, setUnits] = useState<UnitSystem>('si');
   const [lossesOn, setLossesOn] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const { propellant, report } = useEngineDesign(input);
 
   // Restore a shared design from the URL hash (`#apex:...`) on first load.
@@ -124,6 +126,9 @@ export default function App() {
         <button type="button" className="share-config" onClick={() => window.print()}>
           ⎙ Print spec
         </button>
+        <button type="button" className="share-config" onClick={() => setAboutOpen(true)}>
+          ⓘ About / Sources
+        </button>
       </div>
 
       <ReadoutGrid report={displayReport} units={units} />
@@ -185,6 +190,7 @@ export default function App() {
       </footer>
 
       <SpecSheet propellant={propellant} input={input} report={displayReport} units={units} />
+      <AboutPanel open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }
