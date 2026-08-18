@@ -57,7 +57,7 @@ Everything updates live. No "calculate" button. No install. Works offline.
 ## Quick Start (No Code Needed)
 
 ### Option A — Use the live app
-If the project is deployed (GitHub Pages), just click the demo link. Done.
+Live demo: **https://humblerebel84-cpu.github.io/APEX-Rocket-Engine-Simulator/**
 
 ### Option B — Open the standalone file
 Double-click `rocket_engine_simulator.html` in the repo root — it opens in any browser, fully offline.

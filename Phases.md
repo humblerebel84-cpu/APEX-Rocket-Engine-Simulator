@@ -27,7 +27,9 @@
 - **Exit criteria:** PRD acceptance criteria for v1.0 met; `file://` build works.
 
 ## Phase 3 — Launch & Feedback (Week 4)
-- [ ] Deploy to GitHub Pages; custom URL path.
+- [x] Deploy to GitHub Pages; custom URL path.
+      Live at https://humblerebel84-cpu.github.io/APEX-Rocket-Engine-Simulator/
+      (`base: './'` + Actions workflow `configure-pages` → `deploy-pages`).
 - [ ] About page: physics sources, validation table, disclaimer, feedback link
       (form or GitHub issues).
 - [ ] Share: r/rocketry, r/spacex, Rocketry Forum, university team channels.
