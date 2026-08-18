@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_INPUT, useEngineDesign, type EngineDesignInput } from './hooks/useEngineDesign';
 import { PROPELLANTS, PROPELLANT_IDS, type PropellantId } from './physics/propellants';
 import { computeDesign } from './physics/performance';
-import { applyLosses, DEFAULT_LOSSES } from './physics/losses';
+import { applyLosses, DEFAULT_LOSSES, type LossModel, type NozzleGeometry } from './physics/losses';
 import type { DesignItem } from './physics/compare';
 import type { UnitSystem } from './physics/units';
 import { decodeConfig, encodeConfig } from './physics/configLink';
@@ -23,6 +23,7 @@ export default function App() {
   const [compareId, setCompareId] = useState<PropellantId | null>(null);
   const [units, setUnits] = useState<UnitSystem>('si');
   const [lossesOn, setLossesOn] = useState(false);
+  const [nozzleGeometry, setNozzleGeometry] = useState<NozzleGeometry>('conical');
   const [copied, setCopied] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const { propellant, report } = useEngineDesign(input);
@@ -35,16 +36,17 @@ export default function App() {
 
   // Ideal model stays in `report` (EquationPanel, ±3% CEA discipline); display gets
   // the corrected engine-level report when the loss toggle is on.
+  const lossModel: LossModel = useMemo(() => ({ ...DEFAULT_LOSSES, geometry: nozzleGeometry }), [nozzleGeometry]);
   const displayReport = useMemo(
-    () => (lossesOn ? applyLosses(report, DEFAULT_LOSSES) : report),
-    [lossesOn, report],
+    () => (lossesOn ? applyLosses(report, lossModel) : report),
+    [lossesOn, report, lossModel],
   );
 
   const onChange = (patch: Partial<EngineDesignInput>) => setInput((prev) => ({ ...prev, ...patch }));
 
   const primary: DesignItem = { propellant, report: displayReport };
 
-  const compareItem = useMemo<DesignItem | null>(() => {
+const compareItem = useMemo<DesignItem | null>(() => {
     if (!compareId) return null;
     const ideal = computeDesign(PROPELLANTS[compareId], {
       Pc: input.chamberPressurePa,
@@ -56,11 +58,12 @@ export default function App() {
     });
     return {
       propellant: PROPELLANTS[compareId],
-      report: lossesOn ? applyLosses(ideal, DEFAULT_LOSSES) : ideal,
+      report: lossesOn ? applyLosses(ideal, lossModel) : ideal,
     };
   }, [
     compareId,
     lossesOn,
+    lossModel,
     input.chamberPressurePa,
     input.expansionRatio,
     input.ambientPressurePa,
@@ -158,6 +161,8 @@ export default function App() {
             units={units}
             losses={lossesOn}
             onLossesChange={setLossesOn}
+            geometry={nozzleGeometry}
+            onGeometryChange={setNozzleGeometry}
           />
         </div>
 
@@ -189,7 +194,7 @@ export default function App() {
         <strong>Educational / trade-study tool — not flight-certified. Not for safety-critical design.</strong>
       </footer>
 
-      <SpecSheet propellant={propellant} input={input} report={displayReport} units={units} />
+      <SpecSheet propellant={propellant} input={input} report={displayReport} units={units} lossesGeometry={nozzleGeometry} />
       <AboutPanel open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );

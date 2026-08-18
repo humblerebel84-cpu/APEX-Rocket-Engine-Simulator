@@ -6,6 +6,7 @@ import { PROPELLANTS } from '../physics/propellants';
 import { thrustCoefficient } from '../physics/nozzle';
 import { throatAreaForThrust } from '../physics/sizing';
 import { ATM } from '../physics/constants';
+import { bellDivergenceEfficiency, conicalDivergenceEfficiency, raoBellExitHalfAngleDeg, type NozzleGeometry } from '../physics/losses';
 import { fmt } from '../physics/format';
 import { toIn2, toLb, toLbf, toPsi, type UnitSystem } from '../physics/units';
 
@@ -16,6 +17,8 @@ interface Props {
   units: UnitSystem;
   losses: boolean;
   onLossesChange: (v: boolean) => void;
+  geometry: NozzleGeometry;
+  onGeometryChange: (g: NozzleGeometry) => void;
 }
 
 function DerivedBadge({ label, value, unit }: { label: string; value: string; unit: string }) {
@@ -41,7 +44,7 @@ function applyPreset(p: Preset): Partial<EngineDesignInput> {
   };
 }
 
-export default function DesignControls({ input, report, onChange, units, losses, onLossesChange }: Props) {
+export default function DesignControls({ input, report, onChange, units, losses, onLossesChange, geometry, onGeometryChange }: Props) {
   const [lastPreset, setLastPreset] = useState<Preset | null>(null);
   const [thrustMode, setThrustMode] = useState(false);
   const [targetKN, setTargetKN] = useState(500);
@@ -134,11 +137,25 @@ export default function DesignControls({ input, report, onChange, units, losses,
           <input type="checkbox" checked={losses} onChange={(e) => onLossesChange(e.target.checked)} />
           Include divergence + boundary-layer losses
         </label>
-        {losses && report.lossFactor !== undefined && (
-          <div className="propellant-note propellant-cite">
-            Engine-level correction ×{fmt(report.lossFactor, 3)} applied to F / Isp / Δv / TWR (conical divergence
-            + boundary layer, Sutton §12.3). The equation panel stays ideal.
-          </div>
+        {losses && (
+          <>
+            <div className="mode-buttons">
+              <button type="button" className={geometry === 'conical' ? 'active' : ''} onClick={() => onGeometryChange('conical')}>
+                Conical 15°
+              </button>
+              <button type="button" className={geometry === 'bell' ? 'active' : ''} onClick={() => onGeometryChange('bell')}>
+                Rao bell
+              </button>
+            </div>
+            <div className="propellant-note propellant-cite">
+              {geometry === 'conical'
+                ? `Conical divergence λ = (1+cos 15°)/2 = ${fmt(conicalDivergenceEfficiency(15), 4)} (Sutton §12.3).`
+                : `Rao-optimized bell: exit half-angle ${fmt(raoBellExitHalfAngleDeg(input.expansionRatio), 1)}° at ε = ${input.expansionRatio} → λ = ${fmt(bellDivergenceEfficiency(input.expansionRatio), 4)} (Huzel & Huang Fig. 4-7).`}{' '}
+              {report.lossFactor !== undefined && (
+                <>Engine-level correction ×{fmt(report.lossFactor, 3)} applied to F / Isp / Δv / TWR. The equation panel stays ideal.</>
+              )}
+            </div>
+          </>
         )}
       </div>
 

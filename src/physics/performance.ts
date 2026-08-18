@@ -60,6 +60,7 @@ export interface DesignReport {
   dv: number; // m/s
   burnTime: number; // s
   twr: number | null; // -
+  expansionRatio: number; // ε = Ae/At (loss corrections need it for bell geometry)
   lossFactor?: number; // 1 = ideal; <1 only after applyLosses() (engine-level corrections)
   warnings: DesignWarning[];
 }
@@ -118,5 +119,5 @@ export function computeDesign(prop: Propellant, inputs: DesignInputs): DesignRep
     });
   }
 
-  return { Me, Pe, ve, cstar, mdot, Ae, F, isp, densityImpulse, cf, m0, mf, massRatio, dv, burnTime, twr, warnings };
+  return { Me, Pe, ve, cstar, mdot, Ae, F, isp, densityImpulse, cf, m0, mf, massRatio, dv, burnTime, twr, expansionRatio: inputs.eps, warnings };
 }

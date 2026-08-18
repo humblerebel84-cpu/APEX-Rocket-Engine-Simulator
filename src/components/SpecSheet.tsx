@@ -1,6 +1,7 @@
 import type { EngineDesignInput } from '../hooks/useEngineDesign';
 import type { DesignReport } from '../physics/performance';
 import type { Propellant } from '../physics/propellants';
+import type { NozzleGeometry } from '../physics/losses';
 import { toFtPerS, toIn2, toLb, toLbf, toLbfSPerIn3, toPsi, type UnitSystem } from '../physics/units';
 import { fmt } from '../physics/format';
 
@@ -9,11 +10,12 @@ interface Props {
   input: EngineDesignInput;
   report: DesignReport;
   units: UnitSystem;
+  lossesGeometry?: NozzleGeometry;
 }
 
 // Print-only spec sheet. Hidden on screen (`.spec-sheet { display: none }`); the
 // print stylesheet makes it the only visible content.
-export default function SpecSheet({ propellant, input, report, units }: Props) {
+export default function SpecSheet({ propellant, input, report, units, lossesGeometry }: Props) {
   const eng = units === 'eng';
   const cell = (label: string, value: string, unit: string) => (
     <tr>
@@ -75,7 +77,10 @@ export default function SpecSheet({ propellant, input, report, units }: Props) {
       </table>
 
       {report.lossFactor !== undefined && (
-        <p className="spec-loss">Includes divergence + boundary-layer losses (×{fmt(report.lossFactor, 3)}).</p>
+        <p className="spec-loss">
+          Includes {lossesGeometry === 'bell' ? 'Rao bell' : '15° conical'} divergence + boundary-layer losses
+          (×{fmt(report.lossFactor, 3)}).
+        </p>
       )}
       {report.warnings.length > 0 && (
         <ul className="spec-warnings">

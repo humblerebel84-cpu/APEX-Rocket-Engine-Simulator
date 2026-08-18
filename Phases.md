@@ -58,6 +58,15 @@
 - **Exit criteria:** PRD v2.0 acceptance criteria; ≥3 external users running trade studies.
 
 ## Phase 5 — Iterate from Feedback (ongoing)
+- [x] **Rao bell nozzle losses** — geometry-aware divergence efficiency: conical
+      (fixed 15°, λ = (1+cos α)/2) vs Rao-optimized bell (exit half-angle from the
+      area ratio via a cited Huzel & Huang Fig. 4-7 correlation, λ much closer to 1).
+      UI geometry toggle inside the losses panel; spec sheet names the geometry;
+      ideal model untouched. Bell ≈ 0.995–0.997 λ at realistic ε vs cone ≈ 0.983.
+- [x] **CI quality gate** — `.github/workflows/ci.yml` runs `npm ci` → typecheck →
+      lint → `npm test` on every push to main and every PR, so a broken regression
+      can never deploy (the Pages workflow no longer runs without it passing first
+      in the same push event).
 - [ ] Triage feedback log; quarterly micro-releases.
 - [ ] Decide go/no-go for Product 3 (ascent sim / multi-stage) based on demand.
 

@@ -84,7 +84,7 @@ Then open the URL it prints (usually `http://localhost:5173`).
 - 📐 **Physically coupled inputs** — mass flow is *derived* from chamber pressure and throat area, so you can never build an impossible engine configuration
 - 🎯 **Thrust-target mode** — tell it how much thrust you want; it solves the throat area (closed form, no iteration)
 - 🌡️ **Sea-level vs vacuum modes** — one click for SL/vacuum design, with over-expansion / flow-separation warnings
-- 🔬 **Loss corrections (optional)** — conical divergence + boundary-layer layer (×~0.95) applied to F/Isp/Δv/TWR; ideal physics stays one toggle away
+- 🔬 **Loss corrections (optional)** — conical (15°) **or Rao-optimized bell** divergence efficiency + boundary-layer layer applied to F/Isp/Δv/TWR; ideal physics stays one toggle away
 - 📈 **Sweep plots** — Isp vs expansion ratio and thrust vs chamber pressure, hand-rendered SVG
 - 🔗 **Shareable design links** — one click copies a URL that restores the exact design
 - 🖨️ **Printable spec sheet** — clean two-table datasheet from the Print button
@@ -261,7 +261,7 @@ rocket_simulator/
 │   │   ├── nozzle.ts         de Laval flow: Ve, c*, Pe/Pc, Mach(ε)
 │   │   ├── performance.ts    computeDesign() → DesignReport + warnings
 │   │   ├── sizing.ts         ṁ from Pc·At coupling; At from thrust target
-│   │   ├── losses.ts         Conical divergence + boundary-layer corrections
+│   │   ├── losses.ts         Conical or Rao-bell divergence + BL corrections
 │   │   ├── sweep.ts          Design-space sweeps (Isp vs ε, thrust vs Pc)
 │   │   ├── configLink.ts     #apex: URL-hash shareable design encoding
 │   │   ├── propellants.ts    15 propellants, 6 categories, citations
@@ -285,7 +285,7 @@ rocket_simulator/
 │   │   ├── SpecSheet.tsx         Print-only engine spec sheet
 │   │   └── AboutPanel.tsx        Validation table, sources, feedback (modal)
 │   └── styles/theme.css     "Engineering paper" design language
-├── tests/                  ← 125 Vitest tests
+├── tests/                  ← 132 Vitest tests
 ├── PRD.md                  Product requirements
 ├── Architecture.md         Physics + validation methodology
 ├── Design.md               Visual design spec
@@ -310,7 +310,7 @@ rocket_simulator/
 
 ## Validation & Testing
 
-**125 unit tests**, all passing, organized as:
+**132 unit tests**, all passing, organized as:
 
 | Suite | Tests | Purpose |
 |---|---|---|
@@ -319,7 +319,7 @@ rocket_simulator/
 | `nozzle.test.ts` | 19 | Mach–area-ratio, c*, pressure-ratio solvers |
 | `presets.test.ts` | 10 | Preset integrity + model-vs-published Isp |
 | `sizing.test.ts` | 9 | Thrust-target solve + Cf consistency |
-| `losses.test.ts` | 8 | Divergence / boundary-layer corrections |
+| `losses.test.ts` | 15 | Conical + Rao-bell divergence, boundary-layer corrections |
 | `units.test.ts` | 7 | SI ↔ US conversion correctness |
 | `sweep.test.ts` | 5 | Sweep curves (monotonicity, range, NaN) |
 | `compare.test.ts` | 4 | Trade-study row + winner logic |
