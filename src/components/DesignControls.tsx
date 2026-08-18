@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { EngineDesignInput } from '../hooks/useEngineDesign';
 import type { DesignReport } from '../physics/performance';
 import { ENGINE_PRESETS, MISSION_PRESETS, type Preset } from '../physics/presets';
+import { PROPELLANTS } from '../physics/propellants';
+import { thrustCoefficient } from '../physics/nozzle';
+import { throatAreaForThrust } from '../physics/sizing';
+import { ATM } from '../physics/constants';
 import { fmt } from '../physics/format';
-import { toIn2, toLb, toPsi, type UnitSystem } from '../physics/units';
+import { toIn2, toLb, toLbf, toPsi, type UnitSystem } from '../physics/units';
 
 interface Props {
   input: EngineDesignInput;
   report: DesignReport;
   onChange: (patch: Partial<EngineDesignInput>) => void;
   units: UnitSystem;
+  losses: boolean;
+  onLossesChange: (v: boolean) => void;
 }
 
 function DerivedBadge({ label, value, unit }: { label: string; value: string; unit: string }) {
@@ -35,12 +41,37 @@ function applyPreset(p: Preset): Partial<EngineDesignInput> {
   };
 }
 
-export default function DesignControls({ input, report, onChange, units }: Props) {
+export default function DesignControls({ input, report, onChange, units, losses, onLossesChange }: Props) {
   const [lastPreset, setLastPreset] = useState<Preset | null>(null);
+  const [thrustMode, setThrustMode] = useState(false);
+  const [targetKN, setTargetKN] = useState(500);
   const eng = units === 'eng';
   const pcBar = input.chamberPressurePa / 1e5;
   const paBar = input.ambientPressurePa / 1e5;
   const atCm2 = input.throatAreaM2 * 1e4;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  // Thrust-target mode: At is derived from the target thrust, chamber pressure and
+  // the ideal thrust coefficient — same closed form as the sizing module.
+  useEffect(() => {
+    if (!thrustMode) return;
+    const cf = thrustCoefficient(
+      PROPELLANTS[input.propellantId].k,
+      input.expansionRatio,
+      input.ambientPressurePa / input.chamberPressurePa,
+    );
+    const At = cf === null ? null : throatAreaForThrust(targetKN * 1000, input.chamberPressurePa, cf);
+    if (At === null) return;
+    onChangeRef.current({ throatAreaM2: At });
+  }, [
+    thrustMode,
+    targetKN,
+    input.propellantId,
+    input.chamberPressurePa,
+    input.expansionRatio,
+    input.ambientPressurePa,
+  ]);
 
   return (
     <>
@@ -77,6 +108,63 @@ export default function DesignControls({ input, report, onChange, units }: Props
           </div>
         )}
       </div>
+
+      <div className="field">
+        <label>Ambient Design Mode</label>
+        <div className="mode-buttons">
+          <button
+            type="button"
+            className={paBar >= 1.01 ? 'active' : ''}
+            onClick={() => onChangeRef.current({ ambientPressurePa: ATM })}
+          >
+            Sea Level
+          </button>
+          <button
+            type="button"
+            className={paBar <= 0 ? 'active' : ''}
+            onClick={() => onChangeRef.current({ ambientPressurePa: 0 })}
+          >
+            Vacuum
+          </button>
+        </div>
+      </div>
+
+      <div className="field">
+        <label className="toggle-row">
+          <input type="checkbox" checked={losses} onChange={(e) => onLossesChange(e.target.checked)} />
+          Include divergence + boundary-layer losses
+        </label>
+        {losses && report.lossFactor !== undefined && (
+          <div className="propellant-note propellant-cite">
+            Engine-level correction ×{fmt(report.lossFactor, 3)} applied to F / Isp / Δv / TWR (conical divergence
+            + boundary layer, Sutton §12.3). The equation panel stays ideal.
+          </div>
+        )}
+      </div>
+
+      <div className="field">
+        <label className="toggle-row">
+          <input type="checkbox" checked={thrustMode} onChange={(e) => setThrustMode(e.target.checked)} />
+          Thrust-target mode — solve throat area
+        </label>
+      </div>
+
+      {thrustMode && (
+        <div className="field">
+          <label>
+            Target Thrust{' '}
+            <span className="val">{eng ? `${fmt(toLbf(targetKN), 0)} lbf` : `${fmt(targetKN, 0)} kN`}</span>
+          </label>
+          <input
+            type="range"
+            min="50"
+            max="5000"
+            step="10"
+            value={targetKN}
+            onChange={(e) => setTargetKN(Number(e.target.value))}
+          />
+        </div>
+      )}
       <div className="field">
         <label>
           Chamber Pressure{' '}
@@ -125,19 +213,21 @@ export default function DesignControls({ input, report, onChange, units }: Props
         />
       </div>
 
-      <div className="field">
-        <label>
-          Throat Area <span className="val">{eng ? `${fmt(toIn2(atCm2), 0)} in²` : `${fmt(atCm2, 0)} cm²`}</span>
-        </label>
-        <input
-          type="range"
-          min="10"
-          max="1000"
-          step="5"
-          value={atCm2}
-          onChange={(e) => onChange({ throatAreaM2: Number(e.target.value) * 1e-4 })}
-        />
-      </div>
+      {!thrustMode && (
+        <div className="field">
+          <label>
+            Throat Area <span className="val">{eng ? `${fmt(toIn2(atCm2), 0)} in²` : `${fmt(atCm2, 0)} cm²`}</span>
+          </label>
+          <input
+            type="range"
+            min="10"
+            max="1000"
+            step="5"
+            value={atCm2}
+            onChange={(e) => onChange({ throatAreaM2: Number(e.target.value) * 1e-4 })}
+          />
+        </div>
+      )}
 
       <h2 className="sub-heading">Vehicle Mass</h2>
 
@@ -188,6 +278,13 @@ export default function DesignControls({ input, report, onChange, units }: Props
             value={report.Ae !== null ? fmt(eng ? toIn2(report.Ae * 1e4) : report.Ae, eng ? 1 : 3) : '—'}
             unit={eng ? 'in²' : 'm²'}
           />
+          {thrustMode && (
+            <DerivedBadge
+              label="At throat area"
+              value={fmt(eng ? toIn2(atCm2) : atCm2, eng ? 0 : 1)}
+              unit={eng ? 'in²' : 'cm²'}
+            />
+          )}
           <DerivedBadge label="Me exit Mach" value={report.Me !== null ? fmt(report.Me, 2) : '—'} unit="M" />
         </div>
       </div>

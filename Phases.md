@@ -34,11 +34,22 @@
 - **Exit criteria:** live URL, ≥500 visitors in 2 weeks, feedback log started.
 
 ## Phase 4 — Engine Sizing Tool v2.0 (Week 5–8)
-- [ ] Thrust-target mode: enter desired thrust → solve throat area & ṁ.
-- [ ] SizingPanel: sea-level vs vacuum design mode, over-expansion / flow-separation
-      warning (Pe < ~0.4·Pa heuristic), divergence + boundary-layer loss corrections.
-- [ ] Sweep plots: Isp vs ε, thrust vs Pc (Chart.js or SVG).
-- [ ] Config sharing via URL hash; printable spec sheet (print CSS).
+- [x] **B — Sea-level vs vacuum modes + loss corrections.** Ambient Design Mode buttons
+      (Sea Level 1.01325 bar / Vacuum 0) on the ambient slider; optional
+      divergence + boundary-layer loss layer (`losses.ts`, η = λ(15°)·0.97 ≈ 0.953)
+      applied to F/Isp/Cf/density impulse/Δv/TWR. Ideal model untouched → ±3% CEA
+      regression stays intact; EquationPanel always shows the ideal physics.
+- [x] **A — Thrust-target mode.** `thrustCoefficient(k, ε, Pa/Pc)` (same Cf the report
+      reports) → closed-form `At = F/(Pc·Cf)` (`sizing.ts`). UI toggle replaces the
+      throat-area slider with a Target Thrust slider + derived At badge. RS-25 round
+      trip reproduces its 0.057 m² throat within 2%.
+- [x] **C — Sweep plots.** `sweep.ts` (Isp vs ε 2–100, thrust vs Pc 10–300 bar) +
+      hand-rolled SVG `SweepChart` — no Chart.js dependency (offline rule).
+- [x] **D — Shareable config link.** `configLink.ts` — `#apex:<base64url JSON>`
+      round-trip encode/decode with validation; Share button copies the URL,
+      restored on load.
+- [x] **E — Printable spec sheet.** `SpecSheet.tsx` + `@media print` (visibility
+      technique); Print button → clean two-table sheet with disclaimer.
 - [ ] Optional: Rao nozzle contour point list (export).
 - **Exit criteria:** PRD v2.0 acceptance criteria; ≥3 external users running trade studies.
 

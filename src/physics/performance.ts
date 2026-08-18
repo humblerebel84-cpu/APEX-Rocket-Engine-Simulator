@@ -5,6 +5,7 @@ import {
   exitPressureRatio,
   exhaustVelocityForPressureRatio,
   machForAreaRatio,
+  thrustCoefficient,
 } from './nozzle';
 import { massFlowFromThroatArea } from './sizing';
 
@@ -59,6 +60,7 @@ export interface DesignReport {
   dv: number; // m/s
   burnTime: number; // s
   twr: number | null; // -
+  lossFactor?: number; // 1 = ideal; <1 only after applyLosses() (engine-level corrections)
   warnings: DesignWarning[];
 }
 
@@ -83,7 +85,7 @@ export function computeDesign(prop: Propellant, inputs: DesignInputs): DesignRep
   const mdot = valid ? massFlowFromThroatArea(inputs.Pc, inputs.At, cstar) : null;
   const Ae = valid ? inputs.At * inputs.eps : null;
   const F = mdot !== null && Pe !== null && Ae !== null ? thrust(mdot, ve, Pe, inputs.Pa, Ae) : null;
-  const cf = F !== null ? F / (inputs.Pc * inputs.At) : null;
+  const cf = valid && peRatio !== null ? thrustCoefficient(prop.k, inputs.eps, inputs.Pa / inputs.Pc) : null;
   const isp = F !== null && mdot !== null && mdot > 0 ? specificImpulse(F / mdot) : null;
   const densityImpulse = isp !== null ? prop.densityKgM3 * G0 * isp : null;
   const massRatio = m0 > 0 && mf > 0 ? m0 / mf : null;

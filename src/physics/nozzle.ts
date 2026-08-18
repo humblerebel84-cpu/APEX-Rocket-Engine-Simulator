@@ -69,6 +69,20 @@ export function idealCfVac(k: number, eps: number): number | null {
   return momentumCf + eps * peRatio;
 }
 
+// Ideal thrust coefficient including the pressure term at ambient pressure:
+// Cf = F/(Pc·At) = Γ(k)·√[(2k/(k−1))·(1−pr^((k−1)/k))] + (pr − Pa/Pc)·ε.
+// This is the same quantity computeDesign reports as `cf`, and it lets the
+// thrust-target mode solve At = F/(Pc·Cf) without iterating.
+export function thrustCoefficient(k: number, eps: number, paOverPc: number): number | null {
+  const Me = machForAreaRatio(k, eps);
+  if (Me === null) return null;
+  const peRatio = exitPressureRatio(k, Me);
+  const g = gammaFunction(k);
+  if (peRatio === null || g === null || !(peRatio > 0 && peRatio < 1)) return null;
+  const momentum = g * Math.sqrt(((2 * k) / (k - 1)) * (1 - Math.pow(peRatio, (k - 1) / k)));
+  return momentum + (peRatio - paOverPc) * eps;
+}
+
 export function machForPressureRatio(k: number, pressureRatio: number): number | null {
   if (!(k > 1) || !(pressureRatio > 0 && pressureRatio < 1)) return null;
   let lo = 1;

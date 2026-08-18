@@ -27,7 +27,6 @@ with every calculation shown live.
 - [Project Structure](#project-structure)
 - [Scripts](#scripts)
 - [Validation & Testing](#validation--testing)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -83,6 +82,12 @@ Then open the URL it prints (usually `http://localhost:5173`).
 - ⚙️ **Real-engine presets** — load RS-25, Raptor, Merlin 1D, RD-107A, RL10C-1 with one click
 - 🎯 **Mission presets** — Falcon 9 booster stage, upper stage, CubeSat kicker
 - 📐 **Physically coupled inputs** — mass flow is *derived* from chamber pressure and throat area, so you can never build an impossible engine configuration
+- 🎯 **Thrust-target mode** — tell it how much thrust you want; it solves the throat area (closed form, no iteration)
+- 🌡️ **Sea-level vs vacuum modes** — one click for SL/vacuum design, with over-expansion / flow-separation warnings
+- 🔬 **Loss corrections (optional)** — conical divergence + boundary-layer layer (×~0.95) applied to F/Isp/Δv/TWR; ideal physics stays one toggle away
+- 📈 **Sweep plots** — Isp vs expansion ratio and thrust vs chamber pressure, hand-rendered SVG
+- 🔗 **Shareable design links** — one click copies a URL that restores the exact design
+- 🖨️ **Printable spec sheet** — clean two-table datasheet from the Print button
 - 🔬 **Live equation panel** — see the exact formulas with your current numbers substituted in
 - ⚠️ **Smart warnings** — TWR < 1, flow separation, over-expansion, kerosene coking
 - 🌈 **Physically-accurate plume colors** — RP-1 burns orange, LH2 is pale, hypergolics run green
@@ -116,8 +121,8 @@ This is not a game. Every number is computed from the frozen-flow, perfect-gas e
 | Delta-v | $\Delta v = I_{sp}\,g_0 \ln(m_0/m_f)$ | Tsiolkovsky — the rocket equation |
 | Mass flow | $\dot{m} = P_c A_t / c^*$ | **Derived**, not a free input (coupling rule) |
 
-**Honest caveats** — by design, this model does *not* include:
-- Boundary-layer or divergence losses
+**Honest caveats** — by design, the base model does *not* include:
+- Boundary-layer or divergence losses *(optional: toggle adds conical divergence + boundary-layer corrections)*
 - Altitude-varying ambient pressure
 - Multi-stage optimization
 - Combustion chemistry (CEA is used as the external validation source)
@@ -210,7 +215,7 @@ npm run dev          # → http://localhost:5173
 # 4. Verify everything
 npm run typecheck    # TypeScript
 npm run lint         # ESLint
-npm run test         # Vitest (90 tests incl. CEA regression)
+npm run test         # Vitest (116 tests incl. CEA regression)
 
 # 5. Production build
 npm run build        # outputs to dist/
@@ -252,7 +257,10 @@ rocket_simulator/
 │   │   ├── constants.ts      Physical constants
 │   │   ├── nozzle.ts         de Laval flow: Ve, c*, Pe/Pc, Mach(ε)
 │   │   ├── performance.ts    computeDesign() → DesignReport + warnings
-│   │   ├── sizing.ts         ṁ from Pc·At coupling
+│   │   ├── sizing.ts         ṁ from Pc·At coupling; At from thrust target
+│   │   ├── losses.ts         Conical divergence + boundary-layer corrections
+│   │   ├── sweep.ts          Design-space sweeps (Isp vs ε, thrust vs Pc)
+│   │   ├── configLink.ts     #apex: URL-hash shareable design encoding
 │   │   ├── propellants.ts    15 propellants, 6 categories, citations
 │   │   ├── missions.ts       Δv budgets (LEO, TLI, Mars, …)
 │   │   ├── presets.ts        Real engines + mission presets
@@ -269,9 +277,11 @@ rocket_simulator/
 │   │   ├── EquationPanel.tsx     Live-substituted equations
 │   │   ├── MissionDvChart.tsx    Δv budget comparison
 │   │   ├── ComparisonPanel.tsx   Side-by-side trade study
-│   │   └── ShowcaseCompare.tsx   Curated comparison starters
+│   │   ├── ShowcaseCompare.tsx   Curated comparison starters
+│   │   ├── SweepChart.tsx        Hand-rolled SVG design-space plots
+│   │   └── SpecSheet.tsx         Print-only engine spec sheet
 │   └── styles/theme.css     "Engineering paper" design language
-├── tests/                  ← 90 Vitest tests
+├── tests/                  ← 116 Vitest tests
 ├── PRD.md                  Product requirements
 ├── Architecture.md         Physics + validation methodology
 ├── Design.md               Visual design spec
@@ -296,7 +306,7 @@ rocket_simulator/
 
 ## Validation & Testing
 
-**90 unit tests**, all passing, organized as:
+**116 unit tests**, all passing, organized as:
 
 | Suite | Tests | Purpose |
 |---|---|---|
@@ -304,8 +314,12 @@ rocket_simulator/
 | `performance.test.ts` | 16 | Thrust, Isp, Δv, TWR, edge cases |
 | `nozzle.test.ts` | 19 | Mach–area-ratio, c*, pressure-ratio solvers |
 | `presets.test.ts` | 10 | Preset integrity + model-vs-published Isp |
-| `compare.test.ts` | 4 | Trade-study row + winner logic |
+| `sizing.test.ts` | 9 | Thrust-target solve + Cf consistency |
+| `losses.test.ts` | 8 | Divergence / boundary-layer corrections |
 | `units.test.ts` | 7 | SI ↔ US conversion correctness |
+| `sweep.test.ts` | 5 | Sweep curves (monotonicity, range, NaN) |
+| `compare.test.ts` | 4 | Trade-study row + winner logic |
+| `configLink.test.ts` | 4 | Share-link round trip + validation |
 
 **The core discipline:** every liquid bipropellant must land within **±3% of published NASA CEA / Sutton Isp** at its reference (Pc, O/F, ε). Example reference points:
 
