@@ -317,18 +317,6 @@ Monopropellants and solids use wider published bands because the frozen-flow mod
 
 ---
 
-## Roadmap
-
-| Phase | Status |
-|---|---|
-| Physics module + CEA validation | ✅ Done |
-| Coupled educational app v1.0 (this release) | ✅ Done |
-| **→ Open source, GitHub Pages launch** | 🚧 You are here |
-| Engine sizing tool v2.0 — thrust-target solve, sea-level vs vacuum modes, sweep plots, shareable config links, printable spec sheet | 📋 Next |
-| Ascent / trajectory simulation & multi-stage builder | 💭 Backlog, demand-driven |
-
----
-
 ## Contributing
 
 Contributions welcome. A few house rules that keep the project honest:
